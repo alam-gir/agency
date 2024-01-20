@@ -96,7 +96,7 @@ userSchema.methods.generateRefreshToken = function() {
     return JWT.sign({
         _id: this._id
     }, process.env.REFRESH_TOKEN_SECRET as string,{
-        expiresIn: '1m',
+        expiresIn: "30d",
     })
 }
 

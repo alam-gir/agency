@@ -27,7 +27,21 @@ const loginUserDataValidation = [
 
 ]
 
+const passwordDataValidation = [
+    check("current_password","current password must required!")
+    .notEmpty()
+    .isLength({min: 5}).withMessage("password must have minimum 5 characters!")
+    .isLength({max: 20}).withMessage("password maximum have 20 characters!"),
+
+    check("confirm_password","confirm password must required!")
+    .notEmpty()
+    .isLength({min: 5}).withMessage("password must have minimum 5 characters!")
+    .isLength({max: 20}).withMessage("password maximum have 20 characters!"),
+
+]
+
 export {
     registerUserDataValidation,
     loginUserDataValidation,
+    passwordDataValidation
 }

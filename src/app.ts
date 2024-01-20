@@ -12,7 +12,7 @@ app.use(cookieParser())
 
 //use routes
 app.use("/api/v1/auth",authRoutes);
-app.use("/api/user", userRoutes)
+app.use("/api/v1/user", userRoutes)
 
 
 export default app;

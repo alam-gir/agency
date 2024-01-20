@@ -6,6 +6,7 @@ import { upload_cloudinary } from "../utils/cloudinary";
 import { ImageModel } from "../models/image.model";
 import { IGetUserInterfaceRequst } from "../../@types/custom";
 import JWT, { JwtPayload } from 'jsonwebtoken'
+import mongoose from "mongoose";
 
 const registerUser = async (req: Request, res: Response) => {
   const userDataErrors = validationResult(req);
@@ -41,10 +42,13 @@ const registerUser = async (req: Request, res: Response) => {
       public_id: uploadedAvatar?.public_id,
       cloudinaryPath: avatarFolder,
     });
+    const userAvatarSet = await UserModel.findByIdAndUpdate(user._id,{
+      $set:{avatar: avatar._id}
+    })
 
     res
       .status(200)
-      .json({ message: "User Registration Successful!", userId: "user._id" });
+      .json({ message: "User Registration Successful!", userId: userAvatarSet?._id });
   } catch (error) {
     console.log(error);
     res.status(404).json(error);
@@ -79,7 +83,7 @@ const loginUser = async (req: Request, res: Response) => {
     if (!refreshTokenSet)
       return res.status(404).json({ message: "failed to set refresh token!" });
 
-    res.cookie("access_token", access_token, cookieOptions(15, 15));
+    res.cookie("access_token", access_token, cookieOptions(15 * 60, 15 * 60));
     res.cookie(
       "refresh_token",
       refresh_token,
@@ -134,7 +138,7 @@ const reGenerateRefreshToken = async(req: Request, res: Response) => {
   // set cookies = refresh token and access token 
   const refreshToken = req.cookies?.refresh_token || req.headers.authorization?.replace("Bearer ","");
   if(!refreshToken) return res.status(404).json({message: "no token found!"});
-
+  
   const decodeUserId = JWT.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as JwtPayload;
   if(!decodeUserId) return res.status(400).json({message: "invalid Token"});
 
@@ -152,7 +156,7 @@ const reGenerateRefreshToken = async(req: Request, res: Response) => {
   const resetRefreshToken = await user.save();
   if(!resetRefreshToken) return res.status(400).json({message: "token reset failed!"});
 
-  res.cookie("access_token", newAccessToken, cookieOptions(15, 15));
+  res.cookie("access_token", newAccessToken, cookieOptions( 15 * 60, 15 * 60));
 
   res.cookie(
     "refresh_token",
