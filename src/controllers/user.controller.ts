@@ -84,4 +84,30 @@ const updatePassword = async (req: IGetUserInterfaceRequst, res: Response) => {
       .json({ message: "Internal server error to update avatar!" });
   }
 };
-export { updateAvatar, updatePassword };
+
+const updateEmail = async (req: IGetUserInterfaceRequst, res: Response) => {
+  //get user,
+  // new email and current password
+  // current password validity
+  // save email
+
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) return res.status(404).json(errors);
+  const JWTUser = req.user;
+  const data = matchedData(req) as {email: string, current_password: string};
+  try {
+    const user = await UserModel.findById(JWTUser?._id);
+    const isValidPass = user?.isPasswordValid(data.current_password);
+    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    
+    user!.email = data.email;
+    const updatedUser = await user?.save();
+    if(!updatedUser) return res.status(400).json({message: "change email failed!"});
+    return res.status(200).json({message: "changing email success", email: updatedUser.email});
+
+
+  } catch (error) {
+   return res.status(500).json({message: "Internal server error from update email section."});
+  }
+}
+export { updateAvatar, updatePassword, updateEmail };

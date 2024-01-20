@@ -40,8 +40,18 @@ const passwordDataValidation = [
 
 ]
 
+const emailDataValidation = [
+    check("email", "Email must required!").notEmpty().isEmail().withMessage("Valid email needed!"),
+
+    check("current_password","current password must required!")
+    .notEmpty()
+    .isLength({min: 5}).withMessage("password must have minimum 5 characters!")
+    .isLength({max: 20}).withMessage("password maximum have 20 characters!"),
+]
+
 export {
     registerUserDataValidation,
     loginUserDataValidation,
-    passwordDataValidation
+    passwordDataValidation,
+    emailDataValidation
 }
