@@ -78,6 +78,13 @@ const roleDataValidation = [
     .isLength({max: 20}).withMessage("password maximum have 20 characters!"),
 ]
 
+const categoryDataValidation = [
+    check("title","title must required!")
+    .notEmpty()
+    .isLength({min:3}).withMessage("Category title minimum 3 characters required!")
+    .isLength({max: 30}).withMessage("Category title max 30 characters!")
+]
+
 export {
     registerUserDataValidation,
     loginUserDataValidation,
@@ -86,5 +93,5 @@ export {
     phoneDataValidation,
     nameDataValidation,
     roleDataValidation,
-    isRole
+    categoryDataValidation
 }

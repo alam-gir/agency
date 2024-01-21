@@ -4,31 +4,21 @@ import JWT from "jsonwebtoken"
 import { IImage } from "./image.model";
 
 export interface IUser extends Document {
-    name: string
-    email: string
-    avatar: mongoose.Types.ObjectId
-    phone: string
-    password: string
-    role: string
-    refreshToken: string
-    _id: string
-    generateAccessToken: () => string
-    generateRefreshToken:  () => string
-    isPasswordValid: (password: string) => Promise<boolean>
+    name: string;
+    email: string;
+    avatar: mongoose.Types.ObjectId | IImage;
+    phone: string;
+    password: string;
+    role: string;
+    refreshToken: string;
+    _id: string;
+    generateAccessToken: () => string;
+    generateRefreshToken:  () => string;
+    isPasswordValid: (password: string) => Promise<boolean>;
 }
 
-export interface IUserWithAvatar{
-    name: string
-    email: string
-    avatar: IImage
-    phone: string
-    password: string
-    role: string
-    refreshToken: string
-    _id: string
-    generateAccessToken: () => string
-    generateRefreshToken:  () => string
-    isPasswordValid: (password: string) => Promise<boolean>
+export interface IUserPopulate extends IUser{
+    avatar : IImage
 }
 
 const userSchema = new Schema<IUser>({

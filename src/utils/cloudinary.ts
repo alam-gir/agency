@@ -23,10 +23,10 @@ const upload_cloudinary = async (filePath: string, folderPath: string) => {
   }
 };
 
-const delete_cloudinary = async (filePath: string) => {
+const delete_cloudinary = async (public_id: string) => {
   try {
     const deleteInstance = await cloudinary.uploader.destroy(
-      filePath,
+      public_id,
       (error, result) => {
         if (error) throw new Error("failed to delete image from cloudinary!");
         return result;

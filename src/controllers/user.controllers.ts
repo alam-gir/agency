@@ -1,9 +1,10 @@
 import { Response } from "express";
 import { IGetUserInterfaceRequst } from "../../@types/custom";
-import { IUserWithAvatar, UserModel } from "../models/user.model";
+import { IUserPopulate, UserModel } from "../models/user.model";
 import { delete_cloudinary, upload_cloudinary } from "../utils/cloudinary";
 import { ImageModel } from "../models/image.model";
 import { matchedData, validationResult } from "express-validator";
+import fs from "fs";
 
 const updateAvatar = async (req: IGetUserInterfaceRequst, res: Response) => {
   // grab new avatar
@@ -15,7 +16,7 @@ const updateAvatar = async (req: IGetUserInterfaceRequst, res: Response) => {
   try {
     const userData = (await UserModel.findById(user?._id).populate(
       "avatar"
-    )) as IUserWithAvatar;
+    )) as IUserPopulate;
 
     // update new avatar in upload_cloudinary
     const uploadedAvatar = upload_cloudinary(
@@ -46,6 +47,7 @@ const updateAvatar = async (req: IGetUserInterfaceRequst, res: Response) => {
     //success - delete previous avatar from cloudinary
   } catch (error) {
     console.log(error)
+    fs.unlinkSync(avatarPath!);
     return res
       .status(500)
       .json({ message: "Internal server error to update avatar!" });
@@ -184,6 +186,21 @@ const updateRole = async (req: IGetUserInterfaceRequst, res: Response) => {
     if(!updatedUser) return res.status(400).json({message: "change role failed!"});
     return res.status(200).json({message: "changing role success", role: updatedUser.role});
 
+
+  } catch (error) {
+   return res.status(500).json({message: "Internal server error from update role section."});
+  }
+}
+
+const deleteUser = async (req: IGetUserInterfaceRequst, res: Response) => {
+  //get user,
+  // current password validity
+  /* take time to delete, {
+        log out the user,
+        if user not logged in between a sertain time then permanenty delete otherwise cancel the delete appeal.
+  }*/
+
+  try {
 
   } catch (error) {
    return res.status(500).json({message: "Internal server error from update role section."});

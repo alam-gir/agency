@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/jwtVerify.middleware.ts";
 import { upload } from "../middlewares/multer.middleware.ts";
-import { updateAvatar, updateEmail, updateName, updatePassword, updatePhone, updateRole } from "../controllers/user.controller.ts";
+import { updateAvatar, updateEmail, updateName, updatePassword, updatePhone, updateRole } from "../controllers/user.controllers.ts";
 import { emailDataValidation, nameDataValidation, passwordDataValidation, phoneDataValidation, roleDataValidation } from "../utils/expressValidation.ts";
 
 const router = Router();

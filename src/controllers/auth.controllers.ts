@@ -6,12 +6,15 @@ import { upload_cloudinary } from "../utils/cloudinary";
 import { ImageModel } from "../models/image.model";
 import { IGetUserInterfaceRequst } from "../../@types/custom";
 import JWT, { JwtPayload } from 'jsonwebtoken'
-import mongoose from "mongoose";
-
+import fs from "fs";
 const registerUser = async (req: Request, res: Response) => {
   const userDataErrors = validationResult(req);
   if (!userDataErrors.isEmpty())
     res.status(404).json({ message: "data missing!", errors: userDataErrors });
+
+  const userData = matchedData(req);
+  const avatarPath = req.file?.path;
+  const avatarFolder = process.env.AVATAR_FOLDER;
 
   try {
     // check user exist or not
@@ -20,9 +23,6 @@ const registerUser = async (req: Request, res: Response) => {
     // send refresh token to the data base,
     // send access token and refresh token to cookies
     // return user data
-    const userData = matchedData(req);
-    const avatarPath = req.file?.path;
-    const avatarFolder = process.env.AVATAR_FOLDER;
 
     const existUser = await UserModel.findOne({ email: userData?.email });
     if (existUser)
@@ -50,7 +50,7 @@ const registerUser = async (req: Request, res: Response) => {
       .status(200)
       .json({ message: "User Registration Successful!", userId: userAvatarSet?._id });
   } catch (error) {
-    console.log(error);
+    fs.unlinkSync(avatarPath!);
     res.status(404).json(error);
   }
 };
