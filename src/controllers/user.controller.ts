@@ -66,8 +66,8 @@ const updatePassword = async (req: IGetUserInterfaceRequst, res: Response) => {
   try {
     const userData = await UserModel.findById(user?._id);
     if (!userData) return res.status(404).json({ message: "invalid!" });
-    const isValidPass = userData?.isPasswordValid(passwords.current_password);
-    if (!isValidPass) return res.status(400).json({ message: "invalid!" });
+    const isValidPass = await userData?.isPasswordValid(passwords.current_password);
+    if (!isValidPass) return res.status(400).json({ message: "invalid pass!" });
 
     userData.password = passwords.confirm_password;
     const updatedPassword = await userData.save();
@@ -97,7 +97,7 @@ const updateEmail = async (req: IGetUserInterfaceRequst, res: Response) => {
   const data = matchedData(req) as {email: string, current_password: string};
   try {
     const user = await UserModel.findById(JWTUser?._id);
-    const isValidPass = user?.isPasswordValid(data.current_password);
+    const isValidPass = await user?.isPasswordValid(data.current_password);
     if(!isValidPass) return res.status(400).json({message: "wrong password!"});
     
     user!.email = data.email;
@@ -110,4 +110,85 @@ const updateEmail = async (req: IGetUserInterfaceRequst, res: Response) => {
    return res.status(500).json({message: "Internal server error from update email section."});
   }
 }
-export { updateAvatar, updatePassword, updateEmail };
+const updatePhone = async (req: IGetUserInterfaceRequst, res: Response) => {
+  //get user,
+  // new phone and current password
+  // current password validity
+  // save phone
+
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) return res.status(404).json(errors);
+  const JWTUser = req.user;
+  const data = matchedData(req) as {phone: string, current_password: string};
+  try {
+    const user = await UserModel.findById(JWTUser?._id);
+    const isValidPass = await user?.isPasswordValid(data.current_password);
+    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    
+    user!.phone = data.phone;
+    const updatedUser = await user?.save();
+    if(!updatedUser) return res.status(400).json({message: "change phone failed!"});
+    return res.status(200).json({message: "changing phone number success", phone: updatedUser.phone});
+
+
+  } catch (error) {
+   return res.status(500).json({message: "Internal server error from update phone section."});
+  }
+}
+
+const updateName = async (req: IGetUserInterfaceRequst, res: Response) => {
+  //get user,
+  // new name and current password
+  // current password validity
+  // save name
+
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) return res.status(404).json(errors);
+  const JWTUser = req.user;
+  const data = matchedData(req) as {name: string, current_password: string};
+  try {
+    const user = await UserModel.findById(JWTUser?._id);
+
+    const isValidPass = await user?.isPasswordValid(data.current_password);
+    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    
+    user!.name = data.name;
+    const updatedUser = await user?.save();
+    
+    if(!updatedUser) return res.status(400).json({message: "change name failed!"});
+
+    return res.status(200).json({message: "changing name success", name: updatedUser.name});
+
+  } catch (error) {
+   return res.status(500).json({message: "Internal server error from update name section."});
+  }
+}
+
+const updateRole = async (req: IGetUserInterfaceRequst, res: Response) => {
+  //get user,
+  // new role and current password
+  // current password validity
+  // save role
+
+  const errors = validationResult(req);
+  if(!errors.isEmpty()) return res.status(404).json(errors);
+  const JWTUser = req.user;
+  const data = matchedData(req) as {role: string, current_password: string};
+  try {
+    const user = await UserModel.findById(JWTUser?._id);
+    const isValidPass = await user?.isPasswordValid(data.current_password);
+    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    
+    user!.role = data.role;
+    const updatedUser = await user?.save();
+    if(!updatedUser) return res.status(400).json({message: "change role failed!"});
+    return res.status(200).json({message: "changing role success", role: updatedUser.role});
+
+
+  } catch (error) {
+   return res.status(500).json({message: "Internal server error from update role section."});
+  }
+}
+
+
+export { updateAvatar, updatePassword, updateEmail, updatePhone, updateName, updateRole };
