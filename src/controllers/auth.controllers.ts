@@ -7,6 +7,9 @@ import { ImageModel } from "../models/image.model";
 import { IGetUserInterfaceRequst } from "../../@types/custom";
 import JWT, { JwtPayload } from 'jsonwebtoken'
 import fs from "fs";
+import { ApiError } from "../utils/apiError";
+import { ApiResponse } from "../utils/apiResponse";
+
 const registerUser = async (req: Request, res: Response) => {
   const userDataErrors = validationResult(req);
   if (!userDataErrors.isEmpty())
@@ -25,18 +28,21 @@ const registerUser = async (req: Request, res: Response) => {
     // return user data
 
     const existUser = await UserModel.findOne({ email: userData?.email });
-    if (existUser)
+    if (existUser){
+      fs.unlinkSync(avatarPath!);
       return res
-        .status(409)
-        .json({ message: "User is already exist with this mail." });
+      .status(409)
+      .json({ message: "User is already exist with this mail." });
+    }
 
     const user = await UserModel.create(userData);
 
-    if (!user)
-      return res.status(404).json({ message: "User registerd failed!" });
     // upload avatar
     const uploadedAvatar = await upload_cloudinary(avatarPath!, avatarFolder!);
-
+    if(fs.existsSync(avatarPath!)){
+      fs.unlinkSync(avatarPath!);
+    }
+    
     const avatar = await ImageModel.create({
       url: uploadedAvatar?.secure_url,
       public_id: uploadedAvatar?.public_id,
@@ -44,14 +50,29 @@ const registerUser = async (req: Request, res: Response) => {
     });
     const userAvatarSet = await UserModel.findByIdAndUpdate(user._id,{
       $set:{avatar: avatar._id}
-    })
+    }).select("-password -refreshToken");
 
     res
-      .status(200)
-      .json({ message: "User Registration Successful!", userId: userAvatarSet?._id });
+      .status(201)
+      .json(new ApiResponse(201, "User registered Successful!", {user: userAvatarSet}));
+
   } catch (error) {
-    fs.unlinkSync(avatarPath!);
-    res.status(404).json(error);
+    if(fs.existsSync(avatarPath!)){
+      fs.unlinkSync(avatarPath!);
+    }
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json({error: {
+        errorCode : error.statusCode, message: error.message
+      }});
+    }else if((error as any).name === 'ValidationError'){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    } else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else if((error as any).name === 'CastError'){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json({message: "Internal server error from create project!", error})
+    }
   }
 };
 
@@ -62,12 +83,13 @@ const loginUser = async (req: Request, res: Response) => {
 
   try {
     const data = matchedData(req);
+
     const user = await UserModel.findOne({email: data.email}).populate("avatar");
-    if(!user) return res.status(404).json({message: "wrong email credentials!"});
+    if(!user) return res.status(404).json(new ApiError(404, "Wrong credentials!"));
 
     const isValidPass = await user.isPasswordValid(data.password);
 
-    if(!isValidPass) return res.status(404).json({message: "wrong pass credentials!"});
+    if(!isValidPass) return res.status(404).json(new ApiError(404, "Wrong credentials!"));
 
     // if successfull then login user
     // generate refresh token and access token,
@@ -80,9 +102,6 @@ const loginUser = async (req: Request, res: Response) => {
     user.refreshToken = refresh_token;
     const refreshTokenSet = await user.save();
 
-    if (!refreshTokenSet)
-      return res.status(404).json({ message: "failed to set refresh token!" });
-
     res.cookie("access_token", access_token, cookieOptions(15 * 60, 15 * 60));
     res.cookie(
       "refresh_token",
@@ -92,12 +111,26 @@ const loginUser = async (req: Request, res: Response) => {
     
     res
       .status(200)
-      .json({ message: "User Logged In Successful!", userId: user._id });
-    
+      .json(new ApiResponse(200, "Logged in successful!"));
 
   } catch (error) {
-    console.log(error);
-    res.status(404).json(error);
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from login user!"))
+    }
   }
 };
 
@@ -107,7 +140,7 @@ const logOutUser = async (req: IGetUserInterfaceRequst, res: Response) => {
   try {
     const JWTUser = req.user;
     const user = await UserModel.findByIdAndUpdate(JWTUser?._id,{$unset:{refreshToken: 1}},{new: true});
-    if(!user) return res.status(404).json({message: "User not found!"});
+    if(!user) return res.status(404).json(new ApiError(404, "User not found!"));
 
     res.cookie("access_token", {}, cookieOptions(0, 0));
     res.cookie(
@@ -118,12 +151,28 @@ const logOutUser = async (req: IGetUserInterfaceRequst, res: Response) => {
     
     res
       .status(200)
-      .json({ message: "User Logged Out Successful!", userId: user._id });
+      .json(new ApiResponse(200, "User Logout Successfuly!"));
     
 
 
   } catch (error) {
-    
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from login user!"))
+    }
   }
 }
 
@@ -136,38 +185,42 @@ const reGenerateRefreshToken = async(req: Request, res: Response) => {
   // matched -> generate refresh token and access token
   // set refresh token to the DB
   // set cookies = refresh token and access token 
-  const refreshToken = req.cookies?.refresh_token || req.headers.authorization?.replace("Bearer ","");
-  if(!refreshToken) return res.status(404).json({message: "no token found!"});
+try {
+    const refreshToken = req.cookies?.refresh_token || req.headers.authorization?.replace("Bearer ","");
+    if(!refreshToken) return res.status(404).json(new ApiError(404, "No Refresh Token Found!"));
+    
+    const decodeUserId = JWT.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as JwtPayload;
+    if(!decodeUserId) return res.status(400).json(new ApiError(400, "Invalid Token"));
   
-  const decodeUserId = JWT.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET as string) as JwtPayload;
-  if(!decodeUserId) return res.status(400).json({message: "invalid Token"});
-
-  const user = await UserModel.findById(decodeUserId._id);
-  if(!user) return res.status(404).json({message: "user not found!"});
-
-  const isFreshToken = refreshToken === user.refreshToken;
-  if(!isFreshToken) return res.status(404).json({message: "invalid token or token is used!"}); 
-
-  const newAccessToken = user.generateAccessToken();
-  const newRefreshToken = user.generateRefreshToken();
-
-  user.refreshToken = newRefreshToken;
-
-  const resetRefreshToken = await user.save();
-  if(!resetRefreshToken) return res.status(400).json({message: "token reset failed!"});
-
-  res.cookie("access_token", newAccessToken, cookieOptions( 15 * 60, 15 * 60));
-
-  res.cookie(
-    "refresh_token",
-    newRefreshToken,
-    cookieOptions(60 * 60 * 24 * 30, 60 * 60 * 24 * 30)
-  );
+    const user = await UserModel.findById(decodeUserId._id);
+    if(!user) return res.status(404).json(new ApiError(404, "User Not Found!"));
   
-  res
-    .status(200)
-    .json({ message: "Refresh Token Regenerated successFully!", userId: user._id });
-
+    const isFreshToken = refreshToken === user.refreshToken;
+    if(!isFreshToken) return res.status(404).json(new ApiError(404, "Invalid or Used Refresh Token!")); 
+  
+    const newAccessToken = user.generateAccessToken();
+    const newRefreshToken = user.generateRefreshToken();
+  
+    user.refreshToken = newRefreshToken;
+  
+    const resetRefreshToken = await user.save();
+    if(!resetRefreshToken) return res.status(400).json(new ApiError(400, "Token Reset Failed!"));
+  
+    res.cookie("access_token", newAccessToken, cookieOptions( 15 * 60, 15 * 60));
+  
+    res.cookie(
+      "refresh_token",
+      newRefreshToken,
+      cookieOptions(60 * 60 * 24 * 30, 60 * 60 * 24 * 30)
+    );
+    
+    res
+      .status(200)
+      .json(new ApiResponse(200, "Refresh Token Re-generated Successful!"));
+  
+} catch (error) {
+  
+}
 }
 
 export { registerUser, loginUser, logOutUser, reGenerateRefreshToken };

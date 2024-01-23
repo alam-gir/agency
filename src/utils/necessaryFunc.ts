@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+
 const isBdPhone = (value : string) => {
     const bangladeshiNumber = /^(?:\+88|88)?(?:01[3-9]\d{8})$/;
     return bangladeshiNumber.test(value);
@@ -9,4 +12,14 @@ const isRole = (value : string) => {
 }
 export {
     isBdPhone, isRole
+}
+
+export const removeLocalFiles = (path_or_array_of_path: string | string[] ) => {
+    if(Array.isArray(path_or_array_of_path)){
+        // array of paths
+        path_or_array_of_path.forEach(path => fs.unlinkSync(path));
+    }else{
+        // single path
+        fs.unlinkSync(path_or_array_of_path);
+    }
 }

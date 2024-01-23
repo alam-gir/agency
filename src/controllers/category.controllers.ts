@@ -6,6 +6,8 @@ import { delete_cloudinary, upload_cloudinary } from "../utils/cloudinary";
 import { ImageModel } from "../models/image.model";
 import mongoose from "mongoose";
 import fs from "fs";
+import { ApiError } from "../utils/apiError";
+import { ApiResponse } from "../utils/apiResponse";
 
 const createCategory = async (req: IGetUserInterfaceRequst, res: Response) => {
   const errors = validationResult(req);
@@ -13,27 +15,37 @@ const createCategory = async (req: IGetUserInterfaceRequst, res: Response) => {
   const JWTUser = req.user;
   const iconPath = req.file?.path;
   const data = matchedData(req);
-  console.log({ data });
-  console.log({ iconPath });
+
   try {
+    // check that category exist or not
     // create category
     // upload icon in cloudinary
     // create an image with icon data from cludinary
     // modify category with icon (in image model) _id
     // save category
 
+    const isExist = await CategoryModel.findOne({ title: data.title });
+    if (isExist) {
+      fs.unlinkSync(iconPath!);
+      return res
+        .status(409)
+        .json(new ApiError(409, "Category Already Exists!"));
+    }
     const category = await CategoryModel.create({
       title: data.title,
       author: JWTUser?._id,
     });
-    if (!category)
-      return res.status(403).json({ message: "Failed to create category!" });
 
     // upload icon in cloudinary
     const uploadedIcon = await upload_cloudinary(
       iconPath!,
       process.env.ICON_FOLDER!
     );
+    // clear icon from local directory
+    if (fs.existsSync(iconPath!)) {
+      fs.unlinkSync(iconPath!);
+    }
+
     // save icon in DB
     const image = await ImageModel.create({
       public_id: uploadedIcon?.public_id,
@@ -44,16 +56,31 @@ const createCategory = async (req: IGetUserInterfaceRequst, res: Response) => {
     await category.save();
 
     return res
-      .status(200)
-      .json({ message: "category created successful!", ok: true });
+      .status(201)
+      .json(
+        new ApiResponse(201, "Category Created Successfuly!", { category })
+      );
   } catch (error) {
     fs.unlinkSync(iconPath!);
-    return res
-      .status(500)
-      .json({
-        message: "Internal server error from create category section",
-        error,
-      });
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json(error);
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Internal server error from create category!"));
+    }
   }
 };
 
@@ -61,17 +88,15 @@ const getCategory = async (req: Request, res: Response) => {
   try {
     const categories = await CategoryModel.find();
     if (!categories)
-      return res
-        .status(404)
-        .json({ message: "categories not found!", ok: false });
-    return res.status(200).json(categories);
-  } catch (error) {
+      return res.status(404).json(new ApiError(404, "Category Not Found!"));
     return res
-      .status(500)
-      .json({
-        message: "Internal server error in get category section",
-        ok: false,
-      });
+      .status(200)
+      .json(new ApiResponse(200, "category founded!", { categories }));
+  } catch (error) {
+    return res.status(500).json({
+      message: "Internal server error in get category section",
+      ok: false,
+    });
   }
 };
 
@@ -79,19 +104,32 @@ const getSingleCategory = async (req: Request, res: Response) => {
   const categoryId = req.params.id;
 
   try {
-    const categories = await CategoryModel.findById(categoryId);
-    if (!categories)
-      return res
-        .status(404)
-        .json({ message: "category not found!", ok: false });
-    return res.status(200).json(categories);
-  } catch (error) {
+    const category = await CategoryModel.findById(categoryId);
+    if (!category)
+      return res.status(404).json(new ApiError(404, "Category not Found!"));
     return res
-      .status(500)
-      .json({
-        message: "Internal server error in get single category section",
-        ok: false,
-      });
+      .status(200)
+      .json(new ApiResponse(200, "Category Founded!", { category }));
+  } catch (error) {
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json(error);
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Internal server error from login user!"));
+    }
   }
 };
 
@@ -110,53 +148,93 @@ const updateCategoryTitle = async (req: Request, res: Response) => {
     if (!updatedCategory)
       return res
         .status(403)
-        .json({ message: "category title change failed!", ok: false });
+        .json(new ApiError(403, "Category Title Update Failed!"));
 
-    return res.status(200).json({ ok: true, category: updatedCategory });
-  } catch (error) {
     return res
-      .status(500)
-      .json({
-        message: "Internal server error in update category title section!",
-        error,
-      });
+      .status(200)
+      .json(
+        new ApiResponse(200, "Category Title Updated", { updatedCategory })
+      );
+  } catch (error) {
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json(error);
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Internal server error from login user!"));
+    }
   }
 };
+
 const updateCategoryIcon = async (req: Request, res: Response) => {
   const iconPath = req.file?.path;
   const { id } = req.params;
 
   try {
-
     // upload new icon in cloudinary and delete previous one
-    const category = await CategoryModel.findById(id).populate("icon") as ICategoryPopulate;
+    const category = (await CategoryModel.findById(id).populate(
+      "icon"
+    )) as ICategoryPopulate;
     if (!category)
-      return res
-        .status(403)
-        .json({ message: "category not found!", ok: false });
-        
-    const uploadIcon = upload_cloudinary(iconPath!,process.env.ICON_FOLDER!);
-    const deletePrevIcon = delete_cloudinary(category?.icon.public_id)
+      return res.status(404).json(new ApiError(404, "Category Not Found!"));
 
-    const [uploadedIcon, deletedIcon] = await Promise.all([uploadIcon, deletePrevIcon]);
+    const uploadIcon = upload_cloudinary(iconPath!, process.env.ICON_FOLDER!);
+    const deletePrevIcon = delete_cloudinary(category?.icon.public_id);
 
-    if(!uploadedIcon) return res.status(404).json({ message: "failed to change icon!", ok : false});
+    const [uploadedIcon, deletedIcon] = await Promise.all([
+      uploadIcon,
+      deletePrevIcon,
+    ]);
+
+    if (!uploadedIcon)
+      return res.status(403).json(new ApiError(403, "Failed to Change Icon!"));
 
     category.icon.url = uploadedIcon.secure_url;
     category.icon.public_id = uploadedIcon.public_id;
 
     const updatedCategory = await category.save();
-    if(!updatedCategory) return res.status(403).json({message: "failed to updated category!", ok: false});
-
-    return res.status(200).json({ ok: true, category: updatedCategory });
-  } catch (error) {
-    fs.unlinkSync(iconPath!);
     return res
-      .status(500)
-      .json({
-        message: "Internal server error in update category title section!",
-        error,
-      });
+      .status(200)
+      .json(
+        new ApiResponse(200, "Category Icon Update Successfuly!", {
+          updatedCategory,
+        })
+      );
+  } catch (error) {
+    if (fs.existsSync(iconPath!)) {
+      fs.unlinkSync(iconPath!);
+    }
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json(error);
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json(new ApiError(500, "Internal server error from login user!"));
+    }
   }
 };
 

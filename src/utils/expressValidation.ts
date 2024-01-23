@@ -85,6 +85,16 @@ const categoryDataValidation = [
     .isLength({max: 30}).withMessage("Category title max 30 characters!")
 ]
 
+const projectCreateDataValidation = [
+    check("title","Title must required!")
+    .notEmpty()
+    .isLength({min: 3}).withMessage("name must have minimum 3 characters!")
+    .isLength({max: 80}).withMessage("name maximum have 80 characters!"),
+    
+    check("category_id", "Category Id not found!").notEmpty()
+
+]
+
 export {
     registerUserDataValidation,
     loginUserDataValidation,
@@ -93,5 +103,6 @@ export {
     phoneDataValidation,
     nameDataValidation,
     roleDataValidation,
-    categoryDataValidation
+    categoryDataValidation,
+    projectCreateDataValidation
 }

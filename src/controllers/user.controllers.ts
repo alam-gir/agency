@@ -5,18 +5,23 @@ import { delete_cloudinary, upload_cloudinary } from "../utils/cloudinary";
 import { ImageModel } from "../models/image.model";
 import { matchedData, validationResult } from "express-validator";
 import fs from "fs";
+import { ApiError } from "../utils/apiError";
+import { ApiResponse } from "../utils/apiResponse";
 
 const updateAvatar = async (req: IGetUserInterfaceRequst, res: Response) => {
   // grab new avatar
   const avatarPath = req.file?.path;
   if (!avatarPath)
-    return res.status(404).json({ message: "Avatar not found!" });
+    return res.status(404).json(new ApiError(404, "Avatar Path Not Found!"));
 
   const user = req.user;
   try {
     const userData = (await UserModel.findById(user?._id).populate(
       "avatar"
     )) as IUserPopulate;
+
+    if (!userData)
+    return res.status(404).json(new ApiError(404, "User Path Not Found!"));
 
     // update new avatar in upload_cloudinary
     const uploadedAvatar = upload_cloudinary(
@@ -28,6 +33,11 @@ const updateAvatar = async (req: IGetUserInterfaceRequst, res: Response) => {
       uploadedAvatar,
       deletePrev,
     ]);
+    // clear the image from local path
+    
+    if(fs.existsSync(avatarPath!)){
+      fs.unlinkSync(avatarPath!);
+    }
 
     const image = await ImageModel.findOneAndUpdate(
       { _id: userData.avatar._id },
@@ -38,19 +48,32 @@ const updateAvatar = async (req: IGetUserInterfaceRequst, res: Response) => {
       { new: true }
     );
     if (!image)
-      return res.status(400).json({ message: "avatar update failed" });
+      return res.status(403).json(new ApiError(403, "Avatar Update Failed!"));
 
-    return res.status(200).json({
-      message: "avatar update successful!",
-      avatar: avatarResponse?.url,
-    });
+    return res.status(200).json(new ApiResponse(200, "Avatar Update Successfuly!", {avatar: image.url}));
     //success - delete previous avatar from cloudinary
   } catch (error) {
-    console.log(error)
-    fs.unlinkSync(avatarPath!);
-    return res
-      .status(500)
-      .json({ message: "Internal server error to update avatar!" });
+    
+    if(fs.existsSync(avatarPath!)){
+      fs.unlinkSync(avatarPath!);
+    }
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from change avatar!"))
+    }
   }
 };
 
@@ -67,23 +90,34 @@ const updatePassword = async (req: IGetUserInterfaceRequst, res: Response) => {
 
   try {
     const userData = await UserModel.findById(user?._id);
-    if (!userData) return res.status(404).json({ message: "invalid!" });
+    if (!userData) return res.status(404).json(new ApiError(404, "User Not Found!"));
     const isValidPass = await userData?.isPasswordValid(passwords.current_password);
-    if (!isValidPass) return res.status(400).json({ message: "invalid pass!" });
+    if (!isValidPass) return res.status(400).json(new ApiError(400, "Invalid Old Password!"));
 
     userData.password = passwords.confirm_password;
     const updatedPassword = await userData.save();
     
-    if(!updatedPassword) return res.status(400).json({message: "password change failed!"});
-    return res.status(200).json({
-      message: "password update successful!"
-    });
-    //success - delete previous avatar from cloudinary
+    return res.status(200).json(new ApiResponse(200, "Password Change Successfuly!"));
+
   } catch (error) {
-    console.log(error);
-    return res
-      .status(500)
-      .json({ message: "Internal server error to update avatar!" });
+    
+    // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from change password!"))
+    }
   }
 };
 
@@ -99,17 +133,33 @@ const updateEmail = async (req: IGetUserInterfaceRequst, res: Response) => {
   const data = matchedData(req) as {email: string, current_password: string};
   try {
     const user = await UserModel.findById(JWTUser?._id);
+    if(!user) return res.status(404).json(new ApiError(404, "User not found!"));
+
     const isValidPass = await user?.isPasswordValid(data.current_password);
-    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    if(!isValidPass) return res.status(400).json(new ApiError(400, "Wrong Password!"));
     
     user!.email = data.email;
     const updatedUser = await user?.save();
-    if(!updatedUser) return res.status(400).json({message: "change email failed!"});
-    return res.status(200).json({message: "changing email success", email: updatedUser.email});
-
-
+    
+    return res.status(200).json(new ApiResponse(200, "New Email Updated Successful!", {emai: updatedUser.email}));
   } catch (error) {
-   return res.status(500).json({message: "Internal server error from update email section."});
+   // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from change email!"))
+    }
   }
 }
 const updatePhone = async (req: IGetUserInterfaceRequst, res: Response) => {
@@ -125,16 +175,31 @@ const updatePhone = async (req: IGetUserInterfaceRequst, res: Response) => {
   try {
     const user = await UserModel.findById(JWTUser?._id);
     const isValidPass = await user?.isPasswordValid(data.current_password);
-    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    if(!isValidPass) return res.status(400).json(new ApiError(400, "Invalid Password!"));
     
     user!.phone = data.phone;
     const updatedUser = await user?.save();
-    if(!updatedUser) return res.status(400).json({message: "change phone failed!"});
-    return res.status(200).json({message: "changing phone number success", phone: updatedUser.phone});
-
+    
+    return res.status(200).json(new ApiResponse(200, "Phone Number change Successful!", {newPhone : updatedUser!.phone}));
 
   } catch (error) {
-   return res.status(500).json({message: "Internal server error from update phone section."});
+   // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from change phone number!"))
+    }
   }
 }
 
@@ -150,19 +215,34 @@ const updateName = async (req: IGetUserInterfaceRequst, res: Response) => {
   const data = matchedData(req) as {name: string, current_password: string};
   try {
     const user = await UserModel.findById(JWTUser?._id);
+    if(!user) return res.status(404).json(new ApiError(404, "User Not Found!"))
 
     const isValidPass = await user?.isPasswordValid(data.current_password);
-    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    if(!isValidPass) return res.status(400).json(new ApiError(400, "Invalid Password!"));
     
     user!.name = data.name;
     const updatedUser = await user?.save();
-    
-    if(!updatedUser) return res.status(400).json({message: "change name failed!"});
 
-    return res.status(200).json({message: "changing name success", name: updatedUser.name});
+    return res.status(200).json(new ApiResponse(200, "User Name Chage Successful!", {newName: updatedUser.name}));
 
   } catch (error) {
-   return res.status(500).json({message: "Internal server error from update name section."});
+   // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from change name!"))
+    }
   }
 }
 
@@ -178,17 +258,34 @@ const updateRole = async (req: IGetUserInterfaceRequst, res: Response) => {
   const data = matchedData(req) as {role: string, current_password: string};
   try {
     const user = await UserModel.findById(JWTUser?._id);
+    if(!user) return res.status(404).json(new ApiError(404, "User Not Found!"));
+
     const isValidPass = await user?.isPasswordValid(data.current_password);
-    if(!isValidPass) return res.status(400).json({message: "wrong password!"});
+    if(!isValidPass) return res.status(400).json(new ApiError(400, "Invalid Password!"));
     
     user!.role = data.role;
     const updatedUser = await user?.save();
-    if(!updatedUser) return res.status(400).json({message: "change role failed!"});
-    return res.status(200).json({message: "changing role success", role: updatedUser.role});
-
+    
+    return res.status(200).json(new ApiResponse(200, "User Role update Successful!", {newRole: updatedUser.role}));
 
   } catch (error) {
-   return res.status(500).json({message: "Internal server error from update role section."});
+   // instance of ApiError
+    // validationError
+    // castError
+    // DuplicateKeyError 11000 | 11001
+    // interval error
+
+    if(error instanceof ApiError){
+      return res.status(error.statusCode).json(error);
+    }else if((error as any).name === "ValidationError"){
+      return res.status(400).json(new ApiError(400,(error as any).message));
+    }else if((error as any).name === "CastError"){
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    }else if((error as any).code === 11000 || (error as any).code === 11001){
+      return res.status(400).json(new ApiError(400, (error as any).message))
+    }else{
+      return res.status(500).json(new ApiError(500, "Internal server error from change role!"))
+    }
   }
 }
 

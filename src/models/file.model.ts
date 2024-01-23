@@ -1,11 +1,11 @@
 import mongoose, {Schema, Model, Document} from "mongoose";
 
-export interface IFile extends Document {
+export interface IFileSchema extends Document {
     public_id : string;
     url : string;
 }
 
-const fileSchema = new Schema<IFile>({
+const fileSchema = new Schema<IFileSchema>({
     url: {
         type: String,
         required: true
@@ -16,4 +16,4 @@ const fileSchema = new Schema<IFile>({
     }
 },{timestamps:true})
 
-export const FileModel = mongoose.model("image",fileSchema);
+export const FileModel = mongoose.model("file",fileSchema);
