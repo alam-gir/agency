@@ -29,10 +29,13 @@ const registerUser = async (req: Request, res: Response) => {
 
     const existUser = await UserModel.findOne({ email: userData?.email });
     if (existUser){
+     
+    if(fs.existsSync(avatarPath!)){
       fs.unlinkSync(avatarPath!);
+    }
       return res
       .status(409)
-      .json({ message: "User is already exist with this mail." });
+      .json(new ApiError(409, "User Already Registered with This mail!"));
     }
 
     const user = await UserModel.create(userData);

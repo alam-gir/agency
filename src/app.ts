@@ -9,7 +9,7 @@ const app:Application =  express();
 
 
 // use packages
-app.use(express.json());
+app.use(express.json({limit: "3mb"}));
 app.use(cookieParser())
 
 //use routes

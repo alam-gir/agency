@@ -5,6 +5,8 @@ import { error } from "console";
 import mongoose from "mongoose";
 import { IImage } from "../models/image.model";
 import { FileModel, IFileSchema } from "../models/file.model";
+import { IProject } from "../models/project.model";
+import { IUserPopulate } from "../models/user.model";
 env.config();
 
 cloudinary.config({
@@ -35,7 +37,7 @@ const upload_cloudinary = async (filePath: string, folderPath: string) => {
     })
  } 
 
-const uploadToCloudinaryAndDB = async(Model: mongoose.Model<IFileSchema>,filePath: string, folder : string, resource_type :  "auto" | "image" | "video" | "raw" | undefined = "raw") => {
+const uploadToCloudinaryAndDB = async(Model: mongoose.Model<IFileSchema | IUserPopulate>,filePath: string, folder : string, resource_type :  "auto" | "image" | "video" | "raw" | undefined = "raw") => {
   // upload to cloudinary
   const cloud = await cloudinary.uploader.upload(filePath,{folder, resource_type: resource_type});
   const document = new Model({url : cloud.secure_url, public_id: cloud.public_id});
