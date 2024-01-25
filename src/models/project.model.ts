@@ -42,11 +42,11 @@ const projectSchema = new Schema<IProject>({
     },
     files: [{
         type : Schema.ObjectId,
-        ref: "files",
+        ref: "file",
     }],
     images: [{
         type : Schema.ObjectId,
-        ref: "images",
+        ref: "image",
     }],
 })
 

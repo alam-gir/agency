@@ -8,8 +8,53 @@ import { ApiResponse } from "../utils/apiResponse.ts";
 import { delete_cloudinary, upload_cloudinary } from "../utils/cloudinary.ts";
 import { ImageModel } from "../models/image.model.ts";
 import fs from "fs";
-import { IProject } from "../models/project.model.ts";
 import { FileModel } from "../models/file.model.ts";
+
+const getAllProjects = async (req: Request, res: Response) => {
+  let { page, limit } = req.query;
+  const skip = Number(page) || 1  - 1 * Number(limit) || 0;
+  const lim = Number(limit) || 3;
+  try {
+    // get all projects
+    const projects = await ProjectModel.find().skip(skip).limit(lim)
+      .populate("author", { name: 1, email: 1, role: 1 })
+      .populate("category")
+      .populate("files")
+      .populate("images")
+      .then((doc) => doc)
+      .catch((err) => {
+        console.log({ err });
+        if (err) throw new ApiError(400, "failed to get all projects!");
+      });
+
+    if (!projects) throw new ApiError(404, "projects not found!");
+
+    return res.status(200).json(new ApiResponse(200, "success", projects));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({
+          message: "Internal server error from get All projects!",
+          error,
+        });
+    }
+  }
+};
+const getSingleProjects = async (req: Request, res: Response) => {};
 
 const createProject = async (req: IGetUserInterfaceRequst, res: Response) => {
   const errors = validationResult(req);
@@ -59,10 +104,12 @@ const uploadProjectImage = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const imagePath = req.file?.path;
   try {
-    const project = await ProjectModel.findById(projectId).then((doc) => doc).catch((err) => {
-      if(err) throw new ApiError(404, "Project found failed!");
-    });
-    if(!project) throw new ApiError(404, "project not found!");
+    const project = await ProjectModel.findById(projectId)
+      .then((doc) => doc)
+      .catch((err) => {
+        if (err) throw new ApiError(404, "Project found failed!");
+      });
+    if (!project) throw new ApiError(404, "project not found!");
 
     // upload image
     const uploadedImage = await upload_cloudinary(
@@ -121,11 +168,10 @@ const deleteProjectImage = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const imageId = req.body.imageId;
   try {
-
     if (!imageId || !projectId)
       throw new ApiError(400, "Image Id and Project Id is required!");
     // get the project
-    
+
     const project = await ProjectModel.findById(projectId)
       .then((doc) => doc)
       .catch((err) => {
@@ -142,12 +188,15 @@ const deleteProjectImage = async (req: Request, res: Response) => {
           throw new ApiError(400, "image found failed!");
         }
       });
-      if(!image) throw new ApiError(404, "image not found!");
+    if (!image) throw new ApiError(404, "image not found!");
 
     //image id remove from project
-    await ProjectModel.findByIdAndUpdate({_id: projectId},{$pull:{images: imageId}}).catch(err => {
-      if(err) throw new ApiError(400,"failed to delete image from project!")
-    })
+    await ProjectModel.findByIdAndUpdate(
+      { _id: projectId },
+      { $pull: { images: imageId } }
+    ).catch((err) => {
+      if (err) throw new ApiError(400, "failed to delete image from project!");
+    });
 
     // remove from image model
     await ImageModel.deleteOne({ _id: imageId }).select({ public_id: 1 });
@@ -183,15 +232,16 @@ const deleteProjectImage = async (req: Request, res: Response) => {
   }
 };
 
-
 const uploadProjectFile = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const filePath = req.file?.path;
   try {
-    const project = await ProjectModel.findById(projectId).then((doc) => doc).catch((err) => {
-      if(err) throw new ApiError(404, "Project found failed!");
-    });
-    if(!project) throw new ApiError(404, "project not found!");
+    const project = await ProjectModel.findById(projectId)
+      .then((doc) => doc)
+      .catch((err) => {
+        if (err) throw new ApiError(404, "Project found failed!");
+      });
+    if (!project) throw new ApiError(404, "project not found!");
 
     // upload file
     const uploadedFile = await upload_cloudinary(
@@ -251,11 +301,10 @@ const deleteProjectFile = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const fileId = req.body.fileId;
   try {
-
     if (!fileId || !projectId)
       throw new ApiError(400, "File Id and Project Id is required!");
     // get the project
-    
+
     const project = await ProjectModel.findById(projectId)
       .then((doc) => doc)
       .catch((err) => {
@@ -272,12 +321,15 @@ const deleteProjectFile = async (req: Request, res: Response) => {
           throw new ApiError(400, "file found failed!");
         }
       });
-      if(!file) throw new ApiError(404, "file not found!");
+    if (!file) throw new ApiError(404, "file not found!");
 
     //file id remove from project
-    await ProjectModel.findByIdAndUpdate({_id: projectId},{$pull:{files: fileId}}).catch(err => {
-      if(err) throw new ApiError(400,"failed to delete file from project!")
-    })
+    await ProjectModel.findByIdAndUpdate(
+      { _id: projectId },
+      { $pull: { files: fileId } }
+    ).catch((err) => {
+      if (err) throw new ApiError(400, "failed to delete file from project!");
+    });
 
     // remove from file model
     await FileModel.deleteOne({ _id: fileId }).select({ public_id: 1 });
@@ -334,5 +386,7 @@ export {
   updateProjectTitle,
   deleteProjectImage,
   uploadProjectFile,
-  deleteProjectFile
+  deleteProjectFile,
+  getAllProjects,
+  getSingleProjects,
 };
