@@ -10,7 +10,7 @@ export interface IProject extends Document{
     images : mongoose.Types.ObjectId[] | IImage[]
     files : mongoose.Types.ObjectId[] | IFileSchema[]
     author : mongoose.Types.ObjectId
-    publish : boolean
+    status : "published" | "unpublished"
 }
 
 interface IProjectPopulate extends Document, IProject {
@@ -27,9 +27,10 @@ const projectSchema = new Schema<IProject>({
     description: {
         type : String,
     },
-    publish: {
-        type : Boolean,
-        default: false
+    status: {
+        type : String,
+        enum : ["published", "unpublished"],
+        default : "unpublished"
     },
     author: {
         type : Schema.ObjectId,

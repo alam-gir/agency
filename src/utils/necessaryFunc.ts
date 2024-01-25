@@ -1,5 +1,4 @@
 import fs from "fs";
-import path from "path";
 
 const isBdPhone = (value : string) => {
     const bangladeshiNumber = /^(?:\+88|88)?(?:01[3-9]\d{8})$/;

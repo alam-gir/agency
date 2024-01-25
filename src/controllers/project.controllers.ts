@@ -56,7 +56,48 @@ const getAllProjects = async (req: Request, res: Response) => {
     }
   }
 };
-const getSingleProjects = async (req: Request, res: Response) => {};
+
+const getSingleProject = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+  try {
+    // get all projects
+    const project = await ProjectModel.findOne({ _id: projectId })
+      .populate("author", { name: 1, email: 1, role: 1 })
+      .populate("category")
+      .populate("files")
+      .populate("images")
+      .then((doc) => doc)
+      .catch((err) => {
+        if (err) throw new ApiError(400, "failed to get all project!");
+      });
+
+    if (!project) throw new ApiError(404, "project not found!");
+
+    return res.status(200).json(new ApiResponse(200, "success", project));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({
+          message: "Internal server error from get single project!",
+          error,
+        });
+    }
+  }
+};
 
 const createProject = async (req: IGetUserInterfaceRequst, res: Response) => {
   const errors = validationResult(req);
@@ -101,6 +142,130 @@ const createProject = async (req: IGetUserInterfaceRequst, res: Response) => {
     }
   }
 };
+
+const updateProjectTitle = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+  const title = req.body.title;
+
+  try {
+    if(!projectId || !title) throw new ApiError(400,"Project Id and title is required!");
+
+    const project = await ProjectModel.findByIdAndUpdate({_id: projectId},{title},{new: true})
+    .populate("author", { name: 1, email: 1, role: 1 })
+    .populate("category")
+    .populate("files")
+    .populate("images")
+    .then(doc => doc).catch(err => {
+      if(err) throw new ApiError(400,"Project update title failed!");
+    });
+    if(!project) throw new ApiError(404,"Project not found!");
+
+    return res.status(200).json(new ApiResponse(200,"Project title updated!",project))
+    
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({ message: "Internal server error from project update title!", error });
+    }
+  }
+}
+
+const updateProjectDescription = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+  const description = req.body.description;
+
+  try {
+    if(!projectId || !description) throw new ApiError(400,"Project Id and description is required!");
+
+    const project = await ProjectModel.findByIdAndUpdate({_id: projectId},{description},{new: true})
+    .populate("author", { name: 1, email: 1, role: 1 })
+    .populate("category")
+    .populate("files")
+    .populate("images")
+    .then(doc => doc).catch(err => {
+      if(err) throw new ApiError(400,"Project update description failed!");
+    });
+    if(!project) throw new ApiError(404,"Project not found!");
+
+    return res.status(200).json(new ApiResponse(200,"Project description updated!",project))
+    
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({ message: "Internal server error from project update description!", error });
+    }
+  }
+}
+
+const updateProjectStatus = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+  const status = req.body.status as "published" | "unpublished";
+
+  try {
+    if(!projectId || !status) throw new ApiError(400,"Project Id and status is required!");
+    if(status !== "published" && status !== "unpublished") throw new ApiError(400,"Status must be published or unpublished");
+
+    const project = await ProjectModel.findByIdAndUpdate({_id: projectId},{status},{new: true})
+    .populate("author", { name: 1, email: 1, role: 1 })
+    .populate("category")
+    .populate("files")
+    .populate("images")
+    .then(doc => doc).catch(err => {
+      if(err) throw new ApiError(400,"Project update status failed!");
+    });
+    if(!project) throw new ApiError(404,"Project not found!");
+
+    return res.status(200).json(new ApiResponse(200,"Project status updated!",project))
+    
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({ message: "Internal server error from project update status!", error });
+    }
+  }
+}
 
 const uploadProjectImage = async (req: Request, res: Response) => {
   const projectId = req.params.id;
@@ -299,6 +464,54 @@ const uploadProjectFile = async (req: Request, res: Response) => {
   }
 };
 
+const updateProjectCategory = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+  const categoryId = req.body.categoryId;
+
+  try {
+    if(!projectId || !categoryId) throw new ApiError(400,"Project Id and category id is required!");
+
+    const category = await CategoryModel.findById(categoryId).then(doc => doc).catch(err => {
+      if(err) throw new ApiError(400,"Category found failed!");
+    })
+
+    if(!category) throw new ApiError(404, "category not found!");
+
+    const project = await ProjectModel.findByIdAndUpdate({_id: projectId},{category: category._id},{new: true})
+    .populate("author", { name: 1, email: 1, role: 1 })
+    .populate("category")
+    .populate("files")
+    .populate("images")
+    .then(doc => doc).catch(err => {
+      if(err) throw new ApiError(400,"Project update status failed!");
+    });
+
+    if(!project) throw new ApiError(404,"Project not found!");
+
+    return res.status(200).json(new ApiResponse(200,"Project category updated!", project))
+    
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({ message: "Internal server error from project update category!", error });
+    }
+  }
+};
+
 const deleteProjectFile = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const fileId = req.body.fileId;
@@ -366,29 +579,57 @@ const deleteProjectFile = async (req: Request, res: Response) => {
     }
   }
 };
-const getProject = async (req: Request, res: Response) => {};
-const getSingleProject = async (req: Request, res: Response) => {};
-const updateProjectCategory = async (req: Request, res: Response) => {};
-const updateProjectFiles = async (req: Request, res: Response) => {};
-const updateProjectImages = async (req: Request, res: Response) => {};
-const updateProjectTitle = async (req: Request, res: Response) => {};
-const updateProjectDescription = async (req: Request, res: Response) => {};
-const updateProjectStatus = async (req: Request, res: Response) => {};
+
+const deleteProject = async (req: Request, res: Response) => {
+  const projectId = req.params.id;
+  try {
+    if(!projectId) throw new ApiError(404,"Project Id is required!");
+    const deleted = await ProjectModel.deleteOne({_id:projectId}).then(doc => doc).catch(err => {
+      if(err) throw new ApiError(400,"Project delete failed!");
+    }) as { acknowledged: boolean, deletedCount: number }
+
+    if(!deleted.deletedCount) throw new ApiError(404,"Project not found!");
+
+    return res.status(200).json(new ApiResponse(200,"Project deleted successfully!"))
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({ message: "Internal server error from delete project!", error });
+    }
+  }
+}
 
 export {
   createProject,
-  uploadProjectImage,
-  getProject,
+
+  getAllProjects,
   getSingleProject,
+
   updateProjectCategory,
   updateProjectDescription,
-  updateProjectFiles,
-  updateProjectImages,
   updateProjectStatus,
   updateProjectTitle,
-  deleteProjectImage,
+
+  uploadProjectImage,
   uploadProjectFile,
+
+  deleteProjectImage,
   deleteProjectFile,
-  getAllProjects,
-  getSingleProjects,
+
+  deleteProject,
+
 };

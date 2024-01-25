@@ -1,8 +1,11 @@
-class ApiError extends Error  {
+class ApiError<T = undefined> extends Error  {
     public statusCode : number;
-    constructor( statusCode : number, message: string){
+    public errors?: T[];
+    
+    constructor( statusCode : number, message: string, errors?: T[]){
         super(message);
         this.statusCode = statusCode;
+        this.errors = errors;
         
         Object.defineProperty(this, "message",{
             value: message,
