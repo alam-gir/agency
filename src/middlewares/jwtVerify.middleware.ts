@@ -3,6 +3,8 @@ import { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 import { UserModel, IUser } from "../models/user.model";
 import { IGetUserInterfaceRequst } from "../../@types/custom";
+import fs from 'fs';
+import {ApiError} from "../utils/apiError";
 
 export const verifyJWT = async (
   req: IGetUserInterfaceRequst,
@@ -18,7 +20,7 @@ export const verifyJWT = async (
   try {
     const token = req.cookies?.access_token || req.headers.authorization?.replace("Bearer ", "");
 
-    if (!token) return res.status(404).json({ message: "token not found!" });
+    if (!token) throw new ApiError(403, "Access token not found!");
     
     const decodedToken = jwt.verify(
       token,
@@ -26,19 +28,40 @@ export const verifyJWT = async (
     ) as IUser;
 
     if (!decodedToken)
-      return res.status(404).json({ message: "unathorized user!" });
+      throw new ApiError(404, "unathorized user!");
 
     const user = await UserModel
       .findById(decodedToken._id)
       .select("-password -refreshToken");
 
-    if (!user) return res.status(404).json({ message: "user not found!" });
+    if (!user) throw new ApiError(404, "user not found!");
 
     req.user = user;
 
     next();
   } catch (error) {
-    console.log(error)
-    return res.status(404).json({ message: error });
+    fs.readdir('./public/temp/', (err, files)=> {
+        for (let file of files){
+          fs.unlinkSync(`./public/temp/${file}`);
+        }
+
+      })
+        // instance of ApiError
+        // validationError
+        // castError
+        // DuplicateKeyError 11000 | 11001
+        // interval error
+
+        if(error instanceof ApiError){
+          return res.status(error.statusCode).json(error);
+        }else if((error as any).name === "ValidationError"){
+          return res.status(400).json(new ApiError(400,(error as any).message));
+        }else if((error as any).name === "CastError"){
+          return res.status(404).json(new ApiError(404, (error as any).message));
+        }else if((error as any).code === 11000 || (error as any).code === 11001){
+          return res.status(400).json(new ApiError(400, (error as any).message))
+        }else{
+          return res.status(500).json(new ApiError(500, "Internal server error from upload project image!"))
+        }
   }
 };

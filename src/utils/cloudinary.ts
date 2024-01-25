@@ -14,10 +14,11 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
-const upload_cloudinary = async (filePath: string, folderPath: string) => {
+const upload_cloudinary = async (filePath: string, folderPath: string, resource_type: "image" | "video" | "raw" | "auto" | undefined = "image" ) => {
   try {
     const uploadInstance = await cloudinary.uploader.upload(filePath, {
       folder: folderPath,
+      resource_type,
     });
     fs.unlinkSync(filePath);
     return uploadInstance;
