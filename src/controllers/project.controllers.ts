@@ -28,8 +28,10 @@ const getAllProjects = async (req: Request, res: Response) => {
       });
 
     if (!projects) throw new ApiError(404, "projects not found!");
+    const total = await ProjectModel.countDocuments();
+    const totalPages = Math.ceil(total / lim);
 
-    return res.status(200).json(new ApiResponse(200, "success", projects));
+    return res.status(200).json(new ApiResponse(200, "success", {projects,totalPages,total,page,limit}));
   } catch (error) {
     if (error instanceof ApiError) {
       return res.status(error.statusCode).json({
