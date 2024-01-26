@@ -14,15 +14,15 @@ router.route('/:id').get(getSinglePackage);
 // protected routes
 router.route('/create').post(upload.single('icon') ,packageCreateDataValidation ,verifyJWT ,verifyRole("admin") , createPackage);
 
-router.route('/update/title/:id').patch( verifyJWT ,verifyRole("admin") , updatePackageTitle);
-router.route('/update/description/:id').patch( verifyJWT ,verifyRole("admin") , updatePackageDescription);
-router.route('/update/status/:id').patch( verifyJWT ,verifyRole("admin") , updatePackageStatus);
-router.route('/update/icon/:id').patch( upload.single('icon') ,verifyJWT , verifyRole("admin") , updatePackageIcon);
-router.route('/update/category/:id').patch( verifyJWT , verifyRole("admin") , updatePackageCategory);
-router.route('/update/price/:id').patch( verifyJWT , verifyRole("admin") , updatePackagePrice);
-router.route('/update/deliverytime/:id').patch( verifyJWT , verifyRole("admin") , updatePackageDeliveryTime);
-router.route('/update/revisiontime/:id').patch( verifyJWT , verifyRole("admin") , updatePackageRevisionTime);
-router.route('/update/features/:id').patch([check('features','features must be a array of string!').notEmpty().isArray()], verifyJWT , verifyRole("admin") , updatePackageFeatures);
+router.route('/:id/update/title').patch( verifyJWT ,verifyRole("admin") , updatePackageTitle);
+router.route('/:id/update/description').patch( verifyJWT ,verifyRole("admin") , updatePackageDescription);
+router.route('/:id/update/status').patch( verifyJWT ,verifyRole("admin") , updatePackageStatus);
+router.route('/:id/update/icon').patch( upload.single('icon') ,verifyJWT , verifyRole("admin") , updatePackageIcon);
+router.route('/:id/update/category').patch( verifyJWT , verifyRole("admin") , updatePackageCategory);
+router.route('/:id/update/price').patch( verifyJWT , verifyRole("admin") , updatePackagePrice);
+router.route('/:id/update/deliverytime').patch( verifyJWT , verifyRole("admin") , updatePackageDeliveryTime);
+router.route('/:id/update/revisiontime').patch( verifyJWT , verifyRole("admin") , updatePackageRevisionTime);
+router.route('/:id/update/features').patch([check('features','features must be a array of string!').notEmpty().isArray()], verifyJWT , verifyRole("admin") , updatePackageFeatures);
 
 
 export default router;

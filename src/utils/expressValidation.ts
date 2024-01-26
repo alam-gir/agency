@@ -138,8 +138,8 @@ const packageCreateDataValidation = [
     .notEmpty()
     .isLength({ min: 3 })
     .withMessage("type must have minimum 3 characters!")
-    .isLength({ max: 80 })
-    .withMessage("type maximum have 80 characters!"),
+    .isLength({ max: 30 })
+    .withMessage("type maximum have 30 characters!"),
 
   check("description", "Description must required!")
     .notEmpty()
@@ -150,11 +150,9 @@ const packageCreateDataValidation = [
 
   check("category_id", "Category Id not found!").notEmpty(),
 
-  check("price_bdt", "Price must required!")
-    .notEmpty(),
+  check("price_bdt", "Price must required!").notEmpty(),
 
-  check("price_usd", "Price must required!")
-    .notEmpty(),
+  check("price_usd", "Price must required!").notEmpty(),
 
   check("delivery_time", "Delivery time must required!").notEmpty(),
 
@@ -164,6 +162,89 @@ const packageCreateDataValidation = [
     .withMessage("Features must be array!"),
 
   check("revision_time", "Revision time must required!").notEmpty(),
+];
+
+const serviceCreateDataValidation = [
+  check("title", "title must required!")
+    .notEmpty()
+    .isLength({ min: 3 })
+    .withMessage("title must have minimum 3 characters!")
+    .isLength({ max: 80 })
+    .withMessage("title maximum have 80 characters!"),
+
+  check("description", "Description must required!")
+    .notEmpty()
+    .isLength({ min: 10 })
+    .withMessage("Description minimum 10 characters!")
+    .isLength({ max: 500 })
+    .withMessage("Description maximum 500 characters!"),
+
+  check("short_description", "Short Description must required!")
+    .custom((value) => {
+      if (value) {
+        if (value < 6 || value.length > 100) return false;
+        else return true;
+      } else return true;
+    })
+    .withMessage(
+      "Short Description must have minimum 6 characters and maximum 100 characters!"
+    ),
+
+  check("status", "Status must required!")
+    .custom((value) => {
+      if (value) {
+        if (value === "active" || value === "inactive") return true;
+        else return false;
+      } else return true;
+    })
+    .withMessage("Status must be 'active' or 'inactive'!"),
+
+  check("package_ids", "package ids must required!")
+    .notEmpty()
+    .isArray()
+    .withMessage("package ids must be array!"),
+
+  check("category_id", "Category Id not found!").notEmpty(),
+];
+
+const serviceUpdateDataValidation = [
+  check("title", "title must required!")
+    .notEmpty()
+    .isLength({ min: 3 })
+    .withMessage("title must have minimum 3 characters!")
+    .isLength({ max: 80 })
+    .withMessage("title maximum have 80 characters!"),
+
+  check("description", "Description must required!")
+    .notEmpty()
+    .isLength({ min: 10 })
+    .withMessage("Description minimum 10 characters!")
+    .isLength({ max: 500 })
+    .withMessage("Description maximum 500 characters!"),
+
+  check("short_description", "Short Description must required!")
+    .custom((value) => {
+      if (value) {
+        if (value < 6 || value.length > 100) return false;
+        else return true;
+      } else return true;
+    })
+    .withMessage(
+      "Short Description must have minimum 6 characters and maximum 100 characters!"
+    ),
+
+  check("status", "Status must required!")
+    .custom((value) => {
+      if (value) {
+        if (value === "active" || value === "inactive") return true;
+        else return false;
+      } else return true;
+    })
+    .withMessage("Status must be 'active' or 'inactive'!"),
+
+    check("category_id", "Category Id not found!").notEmpty(),
+
+    check("package_ids", "package ids must required!").notEmpty().isArray().withMessage("package ids must be array!"),
 ];
 
 export {
@@ -176,5 +257,7 @@ export {
   roleDataValidation,
   categoryDataValidation,
   projectCreateDataValidation,
-  packageCreateDataValidation
+  packageCreateDataValidation,
+  serviceCreateDataValidation,
+  serviceUpdateDataValidation
 };

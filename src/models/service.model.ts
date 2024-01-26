@@ -1,6 +1,22 @@
-import mongoose , {Schema} from 'mongoose';
+import mongoose , {Document, Schema} from 'mongoose';
+import { IImage } from './image.model';
 
-const serviceSchema = new Schema({
+export interface IService extends Document {
+    title: string;
+    description: string;
+    short_description: string;
+    status: string;
+    icon: mongoose.Types.ObjectId | IImage;
+    packages: mongoose.Types.ObjectId[];
+    category: mongoose.Types.ObjectId;
+    author: mongoose.Types.ObjectId;
+}
+
+export interface IServicePopulated extends IService {
+    icon: IImage;
+}
+
+const serviceSchema = new Schema<IService>({
     title: {
         type: String,
         required: true,
@@ -23,14 +39,18 @@ const serviceSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'image'
     },
-    package: {
+    packages: [{
         type: Schema.Types.ObjectId,
         ref: 'package'
-    },
+    }],
     category: {
         type: Schema.Types.ObjectId,
         ref: 'category'
     },
+    author: {
+        type: Schema.Types.ObjectId,
+        ref: 'user'
+    }
 })
 
 export const ServiceModel = mongoose.model('service', serviceSchema);

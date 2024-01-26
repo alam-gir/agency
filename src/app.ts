@@ -4,6 +4,7 @@ import userRoutes from "./routes/user.routes.ts"
 import categoryRoutes from "./routes/category.routes.ts"
 import projectRoutes from "./routes/project.routes.ts";
 import packageRoutes from "./routes/package.routes.ts";
+import serviceRoutes from "./routes/service.routes.ts"
 import cookieParser from "cookie-parser";
 
 const app:Application =  express();
@@ -19,5 +20,6 @@ app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/category",categoryRoutes);
 app.use("/api/v1/project", projectRoutes);
 app.use("/api/v1/package", packageRoutes)
+app.use("/api/v1/service", serviceRoutes)
 
 export default app;

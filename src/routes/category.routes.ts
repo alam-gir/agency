@@ -13,8 +13,8 @@ router.route("/:id").get(getSingleCategory);
 
 //secured routes
 router.route("/create").post(upload.single("icon") , verifyJWT, verifyRole("admin"),categoryDataValidation ,createCategory);
-router.route("/update/title/:id").patch(verifyJWT, verifyRole("admin"),categoryDataValidation ,updateCategoryTitle);
-router.route("/update/icon/:id").patch(upload.single("icon") ,verifyJWT, verifyRole("admin"),categoryDataValidation ,updateCategoryIcon);
-router.route("/delete/:id");
+router.route("/:id/update/title").patch(verifyJWT, verifyRole("admin"),categoryDataValidation ,updateCategoryTitle);
+router.route("/:id/update/icon").patch(upload.single("icon") ,verifyJWT, verifyRole("admin"),categoryDataValidation ,updateCategoryIcon);
+router.route("/:id/delete");
 
 export default router;

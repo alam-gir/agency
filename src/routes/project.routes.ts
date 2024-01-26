@@ -17,7 +17,6 @@ import {
   uploadProjectImage,
 } from "../controllers/project.controllers";
 import { projectCreateDataValidation } from "../utils/expressValidation";
-import { check } from "express-validator";
 
 const router = Router();
 
@@ -38,20 +37,20 @@ router
   );
 
 router
-  .route("/update/title/:id")
+  .route("/:id/update/title")
   .patch(verifyJWT, verifyRole("admin"), updateProjectTitle);
 router
-  .route("/update/description/:id")
+  .route("/:id/update/description")
   .patch(verifyJWT, verifyRole("admin"), updateProjectDescription);
 router
-  .route("/update/status/:id")
+  .route("/:id/update/status")
   .patch(verifyJWT, verifyRole("admin"), updateProjectStatus);
 router
-  .route("/update/category/:id")
+  .route("/:id/update/category")
   .patch(verifyJWT, verifyRole("admin"), updateProjectCategory);
 
 router
-  .route("/upload/image/:id")
+  .route("/:id/upload/image")
   .post(
     upload.single("image"),
     verifyJWT,
@@ -59,11 +58,11 @@ router
     uploadProjectImage
   );
 router
-  .route("/delete/image/:id")
+  .route("/:id/delete/image")
   .delete(verifyJWT, verifyRole("admin"), deleteProjectImage);
 
 router
-  .route("/upload/file/:id")
+  .route("/:id/upload/file")
   .post(
     upload.single("file"),
     verifyJWT,
@@ -71,11 +70,11 @@ router
     uploadProjectFile
   );
 router
-  .route("/delete/file/:id")
+  .route("/:id/delete/file")
   .delete(verifyJWT, verifyRole("admin"), deleteProjectFile);
 
 router
-  .route("/delete/:id")
+  .route("/:id/delete")
   .delete(verifyJWT, verifyRole("admin"), deleteProject);
 
 export default router;
