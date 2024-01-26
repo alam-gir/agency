@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface IPackage extends Document {
-  title: string;
+  type: string;
   description: string;
   price_bdt: number;
   price_usd: number;
@@ -16,7 +16,7 @@ export interface IPackage extends Document {
 }
 
 const packageSchema = new Schema<IPackage>({
-  title: {
+  type: {
     type: String,
     required: true,
   },

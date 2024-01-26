@@ -12,15 +12,13 @@ import { FileModel } from "../models/file.model.ts";
 
 const getAllProjects = async (req: Request, res: Response) => {
   let { page, limit } = req.query;
-  const skip = Number(page) || 1  - 1 * Number(limit) || 0;
-  const lim = Number(limit) || 3;
+  const lim = parseInt(limit as string) || 10;
+  const skip = (parseInt(page as string) - 1) * lim;
   try {
     // get all projects
     const projects = await ProjectModel.find().skip(skip).limit(lim)
       .populate("author", { name: 1, email: 1, role: 1 })
-      .populate("category")
-      .populate("files")
-      .populate("images")
+      .populate(["category", "files", "images"])
       .then((doc) => doc)
       .catch((err) => {
         console.log({ err });
@@ -31,7 +29,7 @@ const getAllProjects = async (req: Request, res: Response) => {
     const total = await ProjectModel.countDocuments();
     const totalPages = Math.ceil(total / lim);
 
-    return res.status(200).json(new ApiResponse(200, "success", {projects,totalPages,total,page,limit}));
+    return res.status(200).json(new ApiResponse(200, "success", {projects,current_page: page, total_pages: totalPages,total_docs: total, show_limit: lim}));
   } catch (error) {
     if (error instanceof ApiError) {
       return res.status(error.statusCode).json({
@@ -63,9 +61,7 @@ const getSingleProject = async (req: Request, res: Response) => {
     // get all projects
     const project = await ProjectModel.findOne({ _id: projectId })
       .populate("author", { name: 1, email: 1, role: 1 })
-      .populate("category")
-      .populate("files")
-      .populate("images")
+      .populate(["category", "files", "images"])
       .then((doc) => doc)
       .catch((err) => {
         if (err) throw new ApiError(400, "failed to get all project!");
@@ -152,9 +148,7 @@ const updateProjectTitle = async (req: Request, res: Response) => {
 
     const project = await ProjectModel.findByIdAndUpdate({_id: projectId},{title},{new: true})
     .populate("author", { name: 1, email: 1, role: 1 })
-    .populate("category")
-    .populate("files")
-    .populate("images")
+    .populate(["category", "files", "images"])
     .then(doc => doc).catch(err => {
       if(err) throw new ApiError(400,"Project update title failed!");
     });
@@ -193,9 +187,7 @@ const updateProjectDescription = async (req: Request, res: Response) => {
 
     const project = await ProjectModel.findByIdAndUpdate({_id: projectId},{description},{new: true})
     .populate("author", { name: 1, email: 1, role: 1 })
-    .populate("category")
-    .populate("files")
-    .populate("images")
+    .populate(["category", "files", "images"])
     .then(doc => doc).catch(err => {
       if(err) throw new ApiError(400,"Project update description failed!");
     });

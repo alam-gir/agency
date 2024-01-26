@@ -134,12 +134,12 @@ const projectCreateDataValidation = [
 ];
 
 const packageCreateDataValidation = [
-  check("title", "Title must required!")
+  check("type", "Type must required!")
     .notEmpty()
     .isLength({ min: 3 })
-    .withMessage("name must have minimum 3 characters!")
+    .withMessage("type must have minimum 3 characters!")
     .isLength({ max: 80 })
-    .withMessage("name maximum have 80 characters!"),
+    .withMessage("type maximum have 80 characters!"),
 
   check("description", "Description must required!")
     .notEmpty()
