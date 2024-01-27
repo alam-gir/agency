@@ -10,7 +10,6 @@ export interface IUser extends Document {
     phone: string;
     password: string;
     role: string;
-    type: string;
     refreshToken: string;
     _id: string;
     generateAccessToken: () => string;
@@ -29,7 +28,8 @@ const userSchema = new Schema<IUser>({
     },
     email:{
         type : String,
-        required : true
+        required : true,
+        unique : true
     },
     avatar:{
         type : mongoose.SchemaTypes.ObjectId,
@@ -37,7 +37,8 @@ const userSchema = new Schema<IUser>({
     },
     phone:{
         type : String,
-        required : true
+        required : true,
+        unique : true
     },
     password:{
         type : String,
@@ -47,13 +48,8 @@ const userSchema = new Schema<IUser>({
     },
     role:{
         type : String,
-        enum: ["user", "admin", "super-admin"],
+        enum: ["guest","user", "admin", "super-admin"],
         default: "user"
-    },
-    type:{
-        type : String,
-        enum: ["guest", "creadential", "google", "facebook",],
-        default: "creadential"
     },
     refreshToken: {
         type: String

@@ -18,6 +18,7 @@ export const verifyJWT = async (
   // add user to request object
   // next();
   try {
+    
     const token = req.cookies?.access_token || req.headers.authorization?.replace("Bearer ", "");
 
     if (!token) throw new ApiError(403, "Access token not found!");

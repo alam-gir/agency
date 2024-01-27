@@ -1,5 +1,6 @@
 import { check } from "express-validator";
 import { isBdPhone, isRole } from "./necessaryFunc";
+import mongoose from "mongoose";
 
 const registerUserDataValidation = [
   check("name", "Name must required!")
@@ -24,7 +25,7 @@ const registerUserDataValidation = [
   check("phone", "Phone Number must required!")
     .notEmpty()
     .custom(isBdPhone)
-    .withMessage("Valid phone number needed!"),
+    .withMessage("Valid bangladeshi phone number needed!"),
 ];
 
 const loginUserDataValidation = [
@@ -75,7 +76,7 @@ const phoneDataValidation = [
   check("phone", "Phone Number must required!")
     .notEmpty()
     .custom(isBdPhone)
-    .withMessage("Valid phone number needed!"),
+    .withMessage("Valid bangladeshi phone number needed!"),
 
   check("current_password", "current password must required!")
     .notEmpty()
@@ -242,9 +243,34 @@ const serviceUpdateDataValidation = [
     })
     .withMessage("Status must be 'active' or 'inactive'!"),
 
-    check("category_id", "Category Id not found!").notEmpty(),
+  check("category_id", "Category Id not found!").notEmpty(),
 
-    check("package_ids", "package ids must required!").notEmpty().isArray().withMessage("package ids must be array!"),
+  check("package_ids", "package ids must required!")
+    .notEmpty()
+    .isArray()
+    .withMessage("package ids must be array!"),
+];
+
+const orderCreateDataValidation = [
+  check("name", "Name must required!").notEmpty(),
+
+  check("email", "Email must required!").notEmpty().isEmail().withMessage("Valid email needed!"),
+
+  check("phone", "Phone Number must required!").notEmpty().custom(isBdPhone).withMessage("Valid bangladeshi phone number needed!"),
+
+  check("service_id", "Service Id not found!")
+    .notEmpty()
+    .custom((value) => {
+        return mongoose.Types.ObjectId.isValid(value);
+    }).withMessage("Service Id not valid!"),
+
+  check("package_id", "Package Id not found!").notEmpty().custom((value) => {
+    return mongoose.Types.ObjectId.isValid(value);
+  }).withMessage("Package Id not valid!"),
+
+  check("advance_amount_bdt").default(0),
+  check("advance_amount_usd").default(0),
+
 ];
 
 export {
@@ -259,5 +285,6 @@ export {
   projectCreateDataValidation,
   packageCreateDataValidation,
   serviceCreateDataValidation,
-  serviceUpdateDataValidation
+  serviceUpdateDataValidation,
+  orderCreateDataValidation
 };

@@ -16,7 +16,6 @@ const registerUser = async (req: Request, res: Response) => {
     res.status(404).json({ message: "data missing!", errors: userDataErrors });
 
   const userData = matchedData(req);
-  const avatarPath = req.file?.path;
   const avatarFolder = process.env.AVATAR_FOLDER;
 
   try {
@@ -29,40 +28,19 @@ const registerUser = async (req: Request, res: Response) => {
 
     const existUser = await UserModel.findOne({ email: userData?.email });
     if (existUser){
-     
-    if(fs.existsSync(avatarPath!)){
-      fs.unlinkSync(avatarPath!);
-    }
       return res
       .status(409)
       .json(new ApiError(409, "User Already Registered with This mail!"));
     }
 
     const user = await UserModel.create(userData);
-
-    // upload avatar
-    const uploadedAvatar = await upload_cloudinary(avatarPath!, avatarFolder!);
-    if(fs.existsSync(avatarPath!)){
-      fs.unlinkSync(avatarPath!);
-    }
-    
-    const avatar = await ImageModel.create({
-      url: uploadedAvatar?.secure_url,
-      public_id: uploadedAvatar?.public_id,
-      cloudinaryPath: avatarFolder,
-    });
-    const userAvatarSet = await UserModel.findByIdAndUpdate(user._id,{
-      $set:{avatar: avatar._id}
-    }).select("-password -refreshToken");
-
+    const user_data = await UserModel.findById(user._id).select("-password -refreshToken");
+ 
     res
       .status(201)
-      .json(new ApiResponse(201, "User registered Successful!", {user: userAvatarSet}));
+      .json(new ApiResponse(201, "User registered Successful!", {user: user_data}));
 
   } catch (error) {
-    if(fs.existsSync(avatarPath!)){
-      fs.unlinkSync(avatarPath!);
-    }
     if(error instanceof ApiError){
       return res.status(error.statusCode).json({error: {
         errorCode : error.statusCode, message: error.message
