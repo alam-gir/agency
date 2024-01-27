@@ -16,4 +16,4 @@ const fileSchema = new Schema<IFileSchema>({
     }
 },{timestamps:true})
 
-export const FileModel = mongoose.model("file",fileSchema);
+export const FileModel = mongoose.model<IFileSchema>("file",fileSchema);

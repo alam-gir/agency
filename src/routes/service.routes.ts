@@ -1,13 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/jwtVerify.middleware";
 import { verifyRole } from "../middlewares/verifyRole.middleware";
-import {
-  createService,
-  getAllServices,
-  getSingleService,
-  updateService,
-  updateServiceIcon,
-} from "../controllers/service.controllers";
+import * as serviceControll from "../controllers/service.controllers";
 import {
   serviceCreateDataValidation,
   serviceUpdateDataValidation,
@@ -16,9 +10,9 @@ import { upload } from "../middlewares/multer.middleware";
 
 const router = Router();
 
-router.route("/").get(getAllServices);
+router.route("/").get(serviceControll.getAllServices);
 
-router.route("/:id").get(getSingleService);
+router.route("/:id").get(serviceControll.getSingleService);
 
 router
   .route("/create")
@@ -27,7 +21,7 @@ router
     serviceCreateDataValidation,
     verifyJWT,
     verifyRole("admin"),
-    createService
+    serviceControll.createService
   );
 
 router
@@ -36,7 +30,7 @@ router
     serviceUpdateDataValidation,
     verifyJWT,
     verifyRole("admin"),
-    updateService
+    serviceControll.updateService
   );
 
 router
@@ -45,7 +39,7 @@ router
     upload.single("icon"),
     verifyJWT,
     verifyRole("admin"),
-    updateServiceIcon
+    serviceControll.updateServiceIcon
   );
 
 export default router;

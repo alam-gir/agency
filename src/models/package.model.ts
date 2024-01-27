@@ -65,4 +65,4 @@ const packageSchema = new Schema<IPackage>({
 });
 
 
-export const PackageModel = mongoose.model("package", packageSchema);
+export const PackageModel = mongoose.model<IPackage>("package", packageSchema);
