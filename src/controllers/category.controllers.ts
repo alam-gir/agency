@@ -24,6 +24,9 @@ const createCategory = async (req: IGetUserInterfaceRequst, res: Response) => {
     // modify category with icon (in image model) _id
     // save category
 
+    // check file is validation
+    if(!iconPath) throw new ApiError(400, "Icon not found!")
+
     const isExist = await CategoryModel.findOne({ title: data.title });
     if (isExist) {
       fs.unlinkSync(iconPath!);

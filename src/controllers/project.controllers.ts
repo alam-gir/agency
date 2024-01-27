@@ -263,6 +263,9 @@ const uploadProjectImage = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const imagePath = req.file?.path;
   try {
+    // check file is validation
+    if(!imagePath) throw new ApiError(400, "Image not found!")
+
     const project = await ProjectModel.findById(projectId)
       .then((doc) => doc)
       .catch((err) => {
@@ -395,6 +398,9 @@ const uploadProjectFile = async (req: Request, res: Response) => {
   const projectId = req.params.id;
   const filePath = req.file?.path;
   try {
+    // check file is validation
+    if(!filePath) throw new ApiError(400, "File not found!")
+    
     const project = await ProjectModel.findById(projectId)
       .then((doc) => doc)
       .catch((err) => {

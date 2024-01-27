@@ -3,13 +3,22 @@ import { verifyJWT } from "../middlewares/jwtVerify.middleware";
 import { verifyRole } from "../middlewares/verifyRole.middleware";
 import {
   createService,
+  getAllServices,
+  getSingleService,
   updateService,
   updateServiceIcon,
 } from "../controllers/service.controllers";
-import { serviceCreateDataValidation, serviceUpdateDataValidation } from "../utils/expressValidation";
+import {
+  serviceCreateDataValidation,
+  serviceUpdateDataValidation,
+} from "../utils/expressValidation";
 import { upload } from "../middlewares/multer.middleware";
 
 const router = Router();
+
+router.route("/").get(getAllServices);
+
+router.route("/:id").get(getSingleService);
 
 router
   .route("/create")
@@ -30,7 +39,13 @@ router
     updateService
   );
 
-router.route("/:id/update/icon").patch(upload.single('icon') ,verifyJWT, verifyRole("admin"), updateServiceIcon);
-
+router
+  .route("/:id/update/icon")
+  .patch(
+    upload.single("icon"),
+    verifyJWT,
+    verifyRole("admin"),
+    updateServiceIcon
+  );
 
 export default router;

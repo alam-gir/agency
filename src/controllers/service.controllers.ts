@@ -1,13 +1,101 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { IGetUserInterfaceRequst } from "../../@types/custom";
 import { matchedData, validationResult } from "express-validator";
 import { CategoryModel } from "../models/category.model";
 import { ApiError } from "../utils/apiError";
-import { IService, IServicePopulated, ServiceModel } from "../models/service.model";
+import { IServicePopulated, ServiceModel } from "../models/service.model";
 import { delete_cloudinary, upload_cloudinary } from "../utils/cloudinary";
 import { ImageModel } from "../models/image.model";
 import { ApiResponse } from "../utils/apiResponse";
 import { PackageModel } from "../models/package.model";
+
+
+const getAllServices = async (req: Request, res: Response) => {
+  let { page, limit } = req.query;
+  const lim = parseInt(limit as string) || 10;
+  const skip = (parseInt(page as string) - 1) * lim;
+  try {
+    // get all services
+    const services = await ServiceModel.find().skip(skip).limit(lim)
+      .populate("author", { name: 1, email: 1, role: 1 })
+      .populate(["category", "icon", "packages"])
+      .then((doc) => doc)
+      .catch((err) => {
+        console.log({ err });
+        if (err) throw new ApiError(400, "failed to get all services!");
+      });
+
+    if (!services) throw new ApiError(404, "services not found!");
+    const total = await ServiceModel.countDocuments();
+    const totalPages = Math.ceil(total / lim);
+
+    return res.status(200).json(new ApiResponse(200, "success", {services,current_page: page, total_pages: totalPages,total_docs: total, show_limit: lim}));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({
+          message: "Internal server error from get All services!",
+          error,
+        });
+    }
+  }
+};
+
+const getSingleService = async (req: Request, res: Response) => {
+  const service_id = req.params.id;
+  try {
+    // get all services
+    const service = await ServiceModel.findOne({ _id: service_id })
+      .populate("author", { name: 1, email: 1, role: 1 })
+      .populate(["category", "icon", "packages"])
+      .then((doc) => doc)
+      .catch((err) => {
+        if (err) throw new ApiError(400, "failed to get service!");
+      });
+
+    if (!service) throw new ApiError(404, "service not found!");
+
+    return res.status(200).json(new ApiResponse(200, "success", service));
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode).json({
+        error: {
+          errorCode: error.statusCode,
+          message: error.message,
+        },
+      });
+    } else if ((error as any).name === "ValidationError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).code === 11000 || (error as any).code === 11001) {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else if ((error as any).name === "CastError") {
+      return res.status(400).json(new ApiError(400, (error as any).message));
+    } else {
+      return res
+        .status(500)
+        .json({
+          message: "Internal server error from get single service!",
+          error,
+        });
+    }
+  }
+};
+
+
 
 const createService = async (req: IGetUserInterfaceRequst, res: Response) => {
   const errors = validationResult(req);
@@ -25,6 +113,10 @@ const createService = async (req: IGetUserInterfaceRequst, res: Response) => {
   const user = req.user;
 
   try {
+
+    //check file is exist or not
+    if(!iconPath) throw new ApiError(400, "Icon not found!")
+
     // check category is exist or not
     const category = await CategoryModel.findById(data.category_id)
       .then((doc) => doc)
@@ -204,6 +296,7 @@ const updateServiceIcon = async (
   const iconPath = req.file?.path;
 
   try {
+    if(!iconPath) throw new ApiError(400, "Icon not found!")
     // check service is exist or not
     const service = await ServiceModel.findById(service_id)
     .populate('icon')
@@ -278,4 +371,4 @@ const updateServiceIcon = async (
 
 
 
-export { createService, updateService, updateServiceIcon };
+export { createService, updateService, updateServiceIcon, getAllServices, getSingleService };

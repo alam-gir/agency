@@ -344,6 +344,9 @@ const updatePackageIcon = async (req: Request, res: Response) => {
   const package_id = req.params.id;
   const iconPath = req.file?.path;
   try {
+    // check file is validation
+    if(!iconPath) throw new ApiError(400, "Icon not found!")
+
     const package_data = await PackageModel.findById(package_id)
       .then((doc) => doc)
       .catch((err) => {
