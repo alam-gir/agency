@@ -11,6 +11,7 @@ export const createGuestUser = async (
   next: NextFunction
 ) => {
   const errors = validationResult(req);
+  
   try {
     if (!errors.isEmpty()) {
       return res
